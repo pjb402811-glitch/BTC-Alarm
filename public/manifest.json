@@ -4,9 +4,15 @@
   "description": "비트코인 현물 투자를 위한 매수 시점을 사이클 분석과 온체인 데이터를 기반으로 시각적으로 분석하고 안내하는 대시보드입니다.",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],
