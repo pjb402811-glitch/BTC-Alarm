@@ -9,7 +9,7 @@ interface RecommendationDisplayProps {
 
 const sections = {
   buy: {
-    label: '매수 추천',
+    label: '분할매수고려',
     color: 'bg-green-500',
     textColor: 'text-green-300',
   },
@@ -19,7 +19,7 @@ const sections = {
     textColor: 'text-yellow-300',
   },
   sell: {
-    label: '매도 고려',
+    label: '분할매도고려',
     color: 'bg-red-500',
     textColor: 'text-red-300',
   }
@@ -29,14 +29,14 @@ const sellColors = ['bg-red-500', 'bg-red-600', 'bg-red-700', 'bg-red-800'];
 const buyColors = ['bg-green-500', 'bg-green-600', 'bg-green-700', 'bg-green-800'];
 
 const renderColoredText = (text: string) => {
-    const parts = text.split(/(매수 추천 구간|분할 매수를|매도 고려 구간|분할 매도를|관망)/g);
+    const parts = text.split(/(매수 추천 구간|분할매수고려|매도 고려 구간|분할매도 고려|관망)/g);
     return parts.map((part, index) => {
       switch (part) {
         case '매수 추천 구간':
-        case '분할 매수를':
+        case '분할매수고려':
           return <span key={index} className="text-green-400 font-semibold">{part}</span>;
         case '매도 고려 구간':
-        case '분할 매도를':
+        case '분할매도 고려':
           return <span key={index} className="text-red-400 font-semibold">{part}</span>;
         case '관망':
           return <span key={index} className="text-yellow-400 font-semibold">{part}</span>;

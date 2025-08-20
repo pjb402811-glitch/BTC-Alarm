@@ -31,18 +31,48 @@ const CloseIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-const statusConfig = {
-  good: { dotColor: 'bg-green-400', textColor: 'text-green-400' },
-  neutral: { dotColor: 'bg-yellow-400', textColor: 'text-yellow-400' },
-  bad: { dotColor: 'bg-red-400', textColor: 'text-red-400' },
-};
+const getPercentage = (value: number, min: number, max: number, visual?: RangeVisual) => {
+    if (visual && visual.style === 'blocks') { // Special non-linear scaling for cycle chart
+        const sections = [
+            { start: 0, end: 400, weight: 0.25 },
+            { start: 400, end: 500, weight: 1 },
+            { start: 500, end: 600, weight: 1.5 },
+            { start: 600, end: 800, weight: 1 },
+            { start: 800, end: 1000, weight: 2.0 },
+            { start: 1000, end: 1300, weight: 0.33 }
+        ];
 
-const getPercentage = (value: number, min: number, max: number) => {
+        let weightedValue = 0;
+        let cumulativeWeightedLength = 0;
+
+        for (const section of sections) {
+            const sectionLength = section.end - section.start;
+            const weightedSectionLength = sectionLength * section.weight;
+
+            if (value >= section.end) {
+                weightedValue += weightedSectionLength;
+            } else if (value > section.start) {
+                const valueInSection = value - section.start;
+                weightedValue += (valueInSection * section.weight);
+                break;
+            }
+             else {
+                break; // Value is before this section
+            }
+        }
+
+        sections.forEach(s => cumulativeWeightedLength += (s.end - s.start) * s.weight);
+
+        return Math.max(0, Math.min(100, (weightedValue / cumulativeWeightedLength) * 100));
+
+    }
+    
+    // Default linear scaling
     if (max === min) return 0;
     return Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
 }
 
-const LabelRenderer: React.FC<{ labels: { value: number; text: string }[], min: number, max: number, onTop?: boolean }> = ({ labels, min, max, onTop = false }) => {
+const LabelRenderer: React.FC<{ labels: { value: number; text: string }[], min: number, max: number, onTop?: boolean, visual?: RangeVisual }> = ({ labels, min, max, onTop = false, visual }) => {
     if (!labels || labels.length === 0) return null;
 
     const uniqueLabels = Array.from(new Map(labels.map(item => [item.text, item])).values())
@@ -53,7 +83,7 @@ const LabelRenderer: React.FC<{ labels: { value: number; text: string }[], min: 
     let level = 0;
 
     uniqueLabels.forEach(({ value, text }) => {
-        const percent = getPercentage(value, min, max);
+        const percent = getPercentage(value, min, max, visual);
         if (percent - lastPos < (text.length > 4 ? 12 : 8) && lastPos > -10) { // 긴 텍스트에 더 넓은 공간 할당
             level = 1 - level;
         } else {
@@ -65,9 +95,10 @@ const LabelRenderer: React.FC<{ labels: { value: number; text: string }[], min: 
     });
 
     const positionStyle = (topValue: number) => onTop ? { bottom: `${topValue}px` } : { top: `${topValue}px` };
+    const labelFontSize = visual?.style === 'blocks' ? 'text-[9px] sm:text-[10px]' : 'text-[10px] sm:text-xs';
     
     return (
-        <div className={`${onTop ? 'mb-1' : 'mt-2'} h-8 relative text-xs text-slate-400`}>
+        <div className={`${onTop ? 'mb-1' : 'mt-2'} h-8 relative ${labelFontSize} text-slate-400`}>
             {positions.map(({ left, top, text, value }) => {
                 let transformClass = '-translate-x-1/2';
                 if (left < 2) {
@@ -92,23 +123,23 @@ const LabelRenderer: React.FC<{ labels: { value: number; text: string }[], min: 
 
 const RangeVisualizer: React.FC<{ visual: RangeVisual; value: number }> = ({ visual, value }) => {
     const { min, max, buyMin, buyMax, sellMin, sellMax, style } = visual;
-    const valuePercent = getPercentage(value, min, max);
+    const valuePercent = getPercentage(value, min, max, visual);
 
     const BarComponent = style === 'blocks' ? (
         <div className="w-full rounded-full h-full relative bg-slate-600 overflow-hidden">
             <div 
                 className="absolute top-0 h-full bg-red-500"
                 style={{ 
-                    left: `${getPercentage(sellMin, min, max)}%`,
-                    width: `${getPercentage(sellMax, min, max) - getPercentage(sellMin, min, max)}%`
+                    left: `${getPercentage(sellMin, min, max, visual)}%`,
+                    width: `${getPercentage(sellMax, min, max, visual) - getPercentage(sellMin, min, max, visual)}%`
                 }}
                 title={`매도 구간: ${sellMin}-${sellMax}`}
             ></div>
             <div 
                 className="absolute top-0 h-full bg-green-500"
                 style={{ 
-                    left: `${getPercentage(buyMin, min, max)}%`,
-                    width: `${getPercentage(buyMax, min, max) - getPercentage(buyMin, min, max)}%`
+                    left: `${getPercentage(buyMin, min, max, visual)}%`,
+                    width: `${getPercentage(buyMax, min, max, visual) - getPercentage(buyMin, min, max, visual)}%`
                 }}
                 title={`매수 구간: ${buyMin}-${buyMax}`}
             ></div>
@@ -118,7 +149,7 @@ const RangeVisualizer: React.FC<{ visual: RangeVisual; value: number }> = ({ vis
     );
 
     return (
-        <div className="w-full h-3 relative" title={`현재 값: ${value}`}>
+        <div className="w-full h-3.5 relative" title={`현재 값: ${value}`}>
             {BarComponent}
             <div 
                 className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10" 
@@ -135,17 +166,17 @@ const NuplVisualizer: React.FC<{ visual: NuplVisual; value: number }> = ({ visua
     const valuePercent = getPercentage(value, min, max);
 
     const labels = [
-        { value: -0.5, text: "-0.5"},
-        { value: 0, text: "0"},
-        { value: 0.25, text: "0.25"},
-        { value: 0.5, text: "0.5"},
-        { value: 0.75, text: "0.75"},
-        { value: 1, text: "1"},
+        { value: -0.5, text: "-50%"},
+        { value: 0, text: "0%"},
+        { value: 0.25, text: "25%"},
+        { value: 0.5, text: "50%"},
+        { value: 0.75, text: "75%"},
+        { value: 1, text: "100%"},
     ];
 
     return (
         <div className="w-full">
-            <div className="w-full h-3 flex rounded-full overflow-hidden relative mb-1" title={`현재 값: ${value}`}>
+            <div className="w-full h-3.5 flex rounded-full overflow-hidden relative mb-1" title={`현재 값: ${(value * 100).toFixed(1)}%`}>
                 <div className="w-full h-full absolute left-0 top-0 bg-gradient-to-r from-green-500 via-cyan-400 via-33% via-yellow-400 via-50% via-orange-400 via-66% to-red-500"></div>
                 <div 
                     className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10" 
@@ -257,80 +288,108 @@ interface IndicatorCardProps {
 }
 
 const IndicatorCard: React.FC<IndicatorCardProps> = ({ indicator, onUpdate, isLoading }) => {
+  const { id, title, concept, value, unit, status, description, details, buyZoneLabel, sellZoneLabel, visual, cycleStartDate, nextCycleEstimateDate, sourceUrl } = indicator;
+  const isNupl = id === 'nupl';
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(indicator.value.toString());
+  const [editValue, setEditValue] = useState(isNupl ? (value * 100).toFixed(1) : value.toString());
 
-  const { id, title, concept, value, unit, status, description, details, buyZoneLabel, sellZoneLabel, visual, cycleStartDate, nextCycleEstimateDate, sourceUrl } = indicator;
-  const config = statusConfig[status];
+  useEffect(() => {
+    if (!isEditing) {
+      setEditValue(isNupl ? (value * 100).toFixed(1) : value.toString());
+    }
+  }, [value, isEditing, isNupl]);
+
+  const statusTagConfig = {
+    good: 'bg-green-600/50 border-green-800 text-green-200',
+    neutral: 'bg-yellow-600/50 border-yellow-800 text-yellow-200',
+    bad: 'bg-red-600/50 border-red-800 text-red-200',
+  };
 
   const handleSave = () => {
-    const newValue = parseFloat(editValue);
+    let newValue = parseFloat(editValue);
     if (!isNaN(newValue)) {
+      if (isNupl) {
+        newValue /= 100;
+      }
       onUpdate(id, { value: newValue });
     }
     setIsEditing(false);
   };
 
   const handleCancel = () => {
-    setEditValue(value.toString());
+    setEditValue(isNupl ? (value * 100).toFixed(1) : value.toString());
     setIsEditing(false);
   };
 
   const formattedCycleStartDate = cycleStartDate
     ? new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(cycleStartDate))
     : '';
+  
+  const valueColorClass = status === 'good' ? 'text-green-400' : status === 'bad' ? 'text-red-400' : 'text-white';
+
 
   return (
     <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 transition-all duration-300 hover:bg-slate-800 hover:border-slate-700 flex flex-col h-full">
       <div className="flex justify-between items-start gap-4">
         <div className="flex-1">
-          <h4 className="text-xl font-bold text-slate-100">{title}</h4>
-          <p className="text-sm text-slate-400 mt-1">{concept}</p>
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <h4 className="text-xl font-bold text-slate-100">{title}</h4>
+            <span className={`px-4 py-1 rounded-lg text-lg font-bold shadow-lg border-b-2 ${statusTagConfig[status]}`}>
+              {description}
+            </span>
+          </div>
+          <p className="text-sm text-slate-400 mt-2">{concept}</p>
         </div>
-        {visual.type !== 'comparison' && (
-          <div className="text-right flex-shrink-0">
-            <div className="flex items-center justify-end gap-2">
-              {isEditing ? (
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="number"
-                    step="any"
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                    className="w-24 text-right bg-slate-700 text-white font-semibold text-lg rounded-md p-1 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                    autoFocus
-                  />
-                  <button onClick={handleSave} className="p-1 text-green-400 hover:bg-slate-700 rounded-full"><CheckIcon className="w-5 h-5"/></button>
-                  <button onClick={handleCancel} className="p-1 text-red-400 hover:bg-slate-700 rounded-full"><CloseIcon className="w-5 h-5"/></button>
+        <div className="text-right flex-shrink-0">
+            {visual.type !== 'comparison' && (
+                <div className="flex items-center justify-end gap-2">
+                {isEditing ? (
+                    <div className="flex items-center gap-2">
+                    <input 
+                        type="number"
+                        step="any"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                        className="w-24 text-right bg-slate-700 text-white font-semibold text-lg rounded-md p-1 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                        autoFocus
+                    />
+                    <button onClick={handleSave} className="p-1 text-green-400 hover:bg-slate-700 rounded-full"><CheckIcon className="w-5 h-5"/></button>
+                    <button onClick={handleCancel} className="p-1 text-red-400 hover:bg-slate-700 rounded-full"><CloseIcon className="w-5 h-5"/></button>
+                    </div>
+                ) : (
+                    <>
+                    {indicator.id === 'cycle' && cycleStartDate ? (
+                        <div className="flex flex-col sm:flex-row sm:items-baseline items-end">
+                            <span className="text-sm sm:text-base font-normal text-slate-400 sm:mr-2">
+                                ({new Intl.DateTimeFormat('ko-KR', { year: '2-digit', month: 'numeric', day: 'numeric' }).format(new Date(cycleStartDate)).replace(/ /g, '').slice(0, -1)}) 반감기로부터
+                            </span>
+                            <p className={`text-2xl font-semibold transition-colors duration-300 ${valueColorClass}`}>
+                                {value.toLocaleString()}
+                                <span className="text-lg text-slate-400"> {unit}</span>
+                            </p>
+                        </div>
+                    ) : (
+                        <p className="text-2xl font-semibold text-white">
+                            {isNupl ? (value * 100).toFixed(1) : value.toLocaleString()}
+                            <span className="text-lg text-slate-400"> {unit}</span>
+                        </p>
+                    )}
+                    {id !== 'cycle' && (
+                        <button onClick={() => setIsEditing(true) } className="p-1 ml-1 text-slate-400 hover:text-white rounded-full transition-colors"><PencilIcon className="w-4 h-4"/></button>
+                    )}
+                    </>
+                )}
                 </div>
-              ) : (
-                <>
-                  {indicator.id === 'cycle' && cycleStartDate ? (
-                      <p className="text-2xl font-semibold text-white">
-                          <span className="text-base font-normal text-slate-400 align-middle">
-                              ({new Intl.DateTimeFormat('ko-KR', { year: '2-digit', month: 'numeric', day: 'numeric' }).format(new Date(cycleStartDate)).replace(/ /g, '').slice(0, -1)})반감기 시작일로부터{' '}
-                          </span>
-                          {value.toLocaleString()}
-                          <span className="text-lg text-slate-400"> {unit}</span>
-                      </p>
-                  ) : (
-                      <p className="text-2xl font-semibold text-white">{value.toLocaleString()} <span className="text-lg text-slate-400">{unit}</span></p>
-                  )}
-                  {id !== 'cycle' && (
-                    <button onClick={() => { setIsEditing(true); setEditValue(value.toString()); }} className="p-1 ml-1 text-slate-400 hover:text-white rounded-full transition-colors"><PencilIcon className="w-4 h-4"/></button>
-                  )}
-                </>
-              )}
-            </div>
+            )}
 
             <div className='mt-1 space-y-1'>
                 <p className="text-xs text-green-400">매수 구간: {buyZoneLabel}</p>
-                <p className="text-xs text-red-400">매도 구간: {sellZoneLabel}</p>
+                <p className={`text-xs ${sellZoneLabel === '해당 없음' ? 'text-slate-500' : 'text-red-400'}`}>매도 구간: {sellZoneLabel}</p>
             </div>
-          </div>
-        )}
+        </div>
       </div>
 
       <div className="mt-4">
@@ -352,9 +411,9 @@ const IndicatorCard: React.FC<IndicatorCardProps> = ({ indicator, onUpdate, isLo
 
                     return (
                         <div className="w-full">
-                            <LabelRenderer labels={topLabels} min={rangeVisual.min} max={rangeVisual.max} onTop />
+                            <LabelRenderer labels={topLabels} min={rangeVisual.min} max={rangeVisual.max} onTop visual={rangeVisual} />
                             <RangeVisualizer visual={rangeVisual} value={value} />
-                            <LabelRenderer labels={bottomLabels} min={rangeVisual.min} max={rangeVisual.max} />
+                            <LabelRenderer labels={bottomLabels} min={rangeVisual.min} max={rangeVisual.max} visual={rangeVisual} />
                         </div>
                     );
                 } else { // Gradient Charts (MVRV, Puell)
@@ -391,23 +450,12 @@ const IndicatorCard: React.FC<IndicatorCardProps> = ({ indicator, onUpdate, isLo
             </span>
         </div>
       )}
-      
-      {visual.type === 'comparison' && (
-        <div className='mt-3 space-y-1 text-right text-xs'>
-              <p className="text-green-400">매수 구간: {buyZoneLabel}</p>
-              <p className="text-slate-500">매도 구간: {sellZoneLabel}</p>
-        </div>
-      )}
 
-      <div className="mt-auto pt-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-            <span className={`w-3 h-3 rounded-full ${config.dotColor}`}></span>
-            <span className={`font-medium ${config.textColor}`}>{description}</span>
-        </div>
+      <div className="mt-auto pt-4 flex items-center justify-end">
         <div className="flex items-center gap-2">
             {sourceUrl && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400">본 링크를 클릭하여 DATA 반드시확인 입력</span>
+                  <span className="text-xs text-slate-400 hidden sm:inline">본 링크를 클릭하여 DATA 반드시확인 입력</span>
                   <a
                     href={sourceUrl}
                     target="_blank"

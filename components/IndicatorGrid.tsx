@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { IndicatorData } from '../types';
 import IndicatorCard from './IndicatorCard';

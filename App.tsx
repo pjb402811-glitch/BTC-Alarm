@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import type { IndicatorData, IndicatorStatus, RangeVisual } from './types';
 import Header from './components/Header';
@@ -14,7 +13,7 @@ const initialIndicators: IndicatorData[] = [
     value: 0, // Will be calculated automatically
     unit: '일',
     status: 'neutral',
-    description: '관망 구간',
+    description: '관망',
     details: '역사적으로 비트코인 사이클은 반감기 후 800~1000일 사이가 매수하기 좋은 시점. 이 기간은 일반적으로 시장의 축적 단계에 해당.',
     buyZoneLabel: '800-1000일',
     sellZoneLabel: '500-600일 (과열)',
@@ -22,17 +21,22 @@ const initialIndicators: IndicatorData[] = [
       type: 'range',
       style: 'blocks',
       min: 0,
-      max: 1600,
+      max: 1300,
       buyMin: 800,
       buyMax: 1000,
       sellMin: 500,
       sellMax: 600,
-      dateLabels: [0, 500, 800, 1000],
+      dateLabels: [0, 500, 600, 800, 900, 1000],
       intermediateLabels: [
         { value: 0, text: '0' },
+        { value: 400, text: '400' },
         { value: 500, text: '500' },
+        { value: 600, text: '600' },
+        { value: 700, text: '700' },
         { value: 800, text: '800' },
+        { value: 900, text: '900' },
         { value: 1000, text: '1000' },
+        { value: 1300, text: '1300' },
       ]
     },
     cycleStartDate: '2024-04-20',
@@ -40,15 +44,15 @@ const initialIndicators: IndicatorData[] = [
   },
   {
     id: 'realized_price',
-    title: '2. 실현 가격 (Realized Price)',
+    title: '2. Long-Term Holder Realized Price',
     concept: '장기 보유자의 평균 매입 단가와 현재 BTC 가격을 비교하여 저평가 구간을 판단',
     value: 67123.45, // BTC Price
     value2: 58345.67, // LTH Realized Price
     unit: '$',
     status: 'neutral',
-    description: '관망 구간',
+    description: '관망',
     details: '비트코인 장기 보유자 실현 가격(Long-Term Holder Realized Price)은 장기 보유자들이 마지막으로 코인을 옮겼을 때의 평균 가격을 나타냄. 현재 BTC 가격이 이 실현 가격보다 낮아지면, 역사적으로 강력한 매수 기회. 이는 시장이 극심한 공포 상태에 있으며, 장기 보유자들조차 평균적으로 손실을 보고 있다는 의미이기 때문.',
-    buyZoneLabel: 'BTC Price < LTH 실현가',
+    buyZoneLabel: 'BTC Price < LTHRP',
     sellZoneLabel: '해당 없음',
     visual: {
       type: 'comparison',
@@ -64,7 +68,7 @@ const initialIndicators: IndicatorData[] = [
     value: 2.65, 
     unit: '',
     status: 'neutral',
-    description: '관망 구간',
+    description: '관망',
     details: 'MVRV Z-Score는 비트코인 사이클의 최고점(빨간색)과 최저점(초록색)을 예측하는 지표. 0 이하일 때 매수, 7 이상일 때 매도 시그널로 간주됨.',
     buyZoneLabel: '< 0',
     sellZoneLabel: '> 7 (과열)',
@@ -87,31 +91,31 @@ const initialIndicators: IndicatorData[] = [
   },
   {
     id: 'nupl',
-    title: '4. NUPL (미실현 손익)',
+    title: '4. NUPL',
     concept: '시장 참여자들의 전반적인 미실현 수익/손실 상태를 보여주는 심리 지표',
-    value: 0.56, 
-    unit: '',
+    value: 0.56,
+    unit: '%',
     status: 'neutral',
-    description: '관망 구간',
+    description: '관망',
     details: 'NUPL은 시장 참여자들의 전반적인 수익성을 나타냄. \'Capitulation\'(항복, <0) 단계가 매수, \'Euphoria\'(환희, >0.75) 단계가 매도 시그널.',
-    buyZoneLabel: '< 0 (Capitulation)',
-    sellZoneLabel: '> 0.75 (Euphoria)',
+    buyZoneLabel: '< 0%',
+    sellZoneLabel: '> 75%',
      visual: {
       type: 'nupl',
       min: -0.5,
       max: 1,
     },
-    sourceUrl: 'https://www.bitcoinmagazinepro.com/charts/puell-multiple/'
+    sourceUrl: 'https://www.bitcoinmagazinepro.com/charts/relative-unrealized-profit--loss/'
   },
   {
     id: 'puell',
     title: '5. Puell Multiple',
-    concept: '채굴자들의 수익성을 분석하여 시장의 바닥과 천장 신호를 파악',
-    value: 1.82, 
+    concept: '채굴자 수익성을 기준으로 시장의 고점과 저점을 판단',
+    value: 1.45,
     unit: '',
     status: 'neutral',
-    description: '관망 구간',
-    details: 'Puell Multiple은 채굴자 수익성 지표. 0.5 이하(녹색)일 때 매수, 4 이상(빨간색)일 때 매도 시그널로 간주됨.',
+    description: '관망',
+    details: 'Puell Multiple은 채굴자들의 수익성을 측정하는 지표. 이 값이 0.5 이하로 떨어지면 역사적으로 매수하기 좋은 시점이었고(채굴자 항복), 4 이상으로 올라가면 시장 과열로 매도 시그널로 간주됨.',
     buyZoneLabel: '< 0.5',
     sellZoneLabel: '> 4 (과열)',
     visual: {
@@ -130,167 +134,182 @@ const initialIndicators: IndicatorData[] = [
       ]
     },
     sourceUrl: 'https://www.bitcoinmagazinepro.com/charts/puell-multiple/'
-  }
+  },
 ];
 
-const getIndicatorStatus = (indicator: IndicatorData): { status: IndicatorStatus, description: string } => {
-  const { id, value, value2, visual } = indicator;
-
-  switch (id) {
-    case 'cycle':
-    case 'mvrv':
-    case 'puell':
-      if (visual.type === 'range') {
-        const { buyMin, buyMax, sellMin, sellMax } = visual as RangeVisual;
-        if (value >= buyMin && value <= buyMax) {
-          return { status: 'good', description: '매수 추천 구간' };
-        }
-        if (value >= sellMin && value <= sellMax) {
-          return { status: 'bad', description: '매도 고려 구간' };
-        }
-      }
-      break;
-    case 'realized_price':
-      if (value2 !== undefined && value < value2) {
-        return { status: 'good', description: '매수 추천 구간' };
-      }
-      return { status: 'neutral', description: '관망 구간' };
-    case 'nupl':
-      if (value < 0) {
-        return { status: 'good', description: '매수 추천 구간 (항복)' };
-      }
-      if (value > 0.75) {
-        return { status: 'bad', description: '매도 고려 구간 (환희)' };
-      }
-      break;
-    default:
-      break;
-  }
-  return { status: 'neutral', description: '관망 구간' };
-};
-
-interface RecommendationResult {
-  recommendation: 'buy' | 'wait' | 'sell';
-  text: string;
-  buyLevel: number;
-  sellLevel: number;
-}
-
 const App: React.FC = () => {
-  const [indicators, setIndicators] = useState<IndicatorData[]>(initialIndicators);
-  const [isLoadingPrice, setIsLoadingPrice] = useState<boolean>(true);
+  const [indicators, setIndicators] = useState<IndicatorData[]>(() => {
+    const saved = localStorage.getItem('btc-indicator-data');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse indicators from localStorage', e);
+      }
+    }
+    return initialIndicators;
+  });
 
-  const handleUpdateIndicator = (id: string, newValues: { value?: number, value2?: number }) => {
-    setIndicators(prevIndicators => 
-      prevIndicators.map(ind => {
-        if (ind.id === id) {
-          const updatedInd = { ...ind, ...newValues };
-          const { status, description } = getIndicatorStatus(updatedInd);
-          updatedInd.status = status;
-          updatedInd.description = description;
-          return updatedInd;
+  const [recommendation, setRecommendation] = useState({
+    current: 'wait' as 'buy' | 'wait' | 'sell',
+    text: '',
+    buyLevel: 0,
+    sellLevel: 0,
+  });
+  const [isLoadingPrice, setIsLoadingPrice] = useState(true);
+
+  // Save to localStorage whenever indicators change
+  useEffect(() => {
+    localStorage.setItem('btc-indicator-data', JSON.stringify(indicators));
+  }, [indicators]);
+
+  const updateIndicatorStatus = (indicator: IndicatorData): IndicatorData => {
+    let status: IndicatorStatus = 'neutral';
+    let description = '관망';
+
+    if (indicator.visual.type === 'range') {
+      const visual = indicator.visual;
+      if (indicator.value >= visual.buyMin && indicator.value <= visual.buyMax) {
+        status = 'good';
+        description = '매수';
+      } else if (indicator.value >= visual.sellMin && indicator.value <= visual.sellMax) {
+        status = 'bad';
+        description = '매도';
+      }
+    } else if (indicator.id === 'nupl') {
+      if (indicator.value < 0) {
+        status = 'good';
+        description = '매수';
+      } else if (indicator.value > 0.75) {
+        status = 'bad';
+        description = '매도';
+      }
+    } else if (indicator.id === 'realized_price' && indicator.value2 !== undefined) {
+      if (indicator.value < indicator.value2) {
+        status = 'good';
+        description = '매수';
+      }
+    }
+
+    return { ...indicator, status, description };
+  };
+
+  const calculateOverallRecommendation = (updatedIndicators: IndicatorData[]) => {
+    const goodCount = updatedIndicators.filter(ind => ind.status === 'good').length;
+    const badCount = updatedIndicators.filter(ind => ind.status === 'bad').length;
+
+    let current: 'buy' | 'wait' | 'sell' = 'wait';
+    let text = '';
+    
+    // Total indicators minus the cycle one which is for context
+    const totalRelevantIndicators = updatedIndicators.filter(ind => ind.id !== 'cycle').length;
+    // We need at least 2 indicators to suggest buying
+    const buyThreshold = 2;
+    
+    if (goodCount >= buyThreshold) {
+      current = 'buy';
+      text = `${totalRelevantIndicators}개 지표 중 ${goodCount}개가 매수 추천 구간에 있습니다.\n종합적으로 볼 때, 현재는 비트코인 현물 투자를 위한 분할매수고려`;
+    } else if (badCount > 0) {
+      current = 'sell';
+      text = `${totalRelevantIndicators}개 지표 중 ${badCount}개가 매도 고려 구간에 있습니다.\n종합적으로 볼 때, 현재는 리스크 관리가 필요한 시점으로 분할매도 고려`;
+    } else {
+      current = 'wait';
+      text = `대부분의 지표가 중립 구간에 있습니다.\n종합적으로 볼 때, 시장 방향성을 확인하며 관망`;
+    }
+    
+    setRecommendation({
+      current,
+      text,
+      buyLevel: goodCount,
+      sellLevel: badCount
+    });
+  };
+
+  const updateIndicatorValue = (id: string, values: { value?: number, value2?: number }) => {
+    setIndicators(prevIndicators => {
+      const newIndicators = prevIndicators.map(indicator => {
+        if (indicator.id === id) {
+          const updatedIndicator = { ...indicator, ...values };
+          return updateIndicatorStatus(updatedIndicator);
         }
-        return ind;
-      })
-    );
+        return indicator;
+      });
+      calculateOverallRecommendation(newIndicators);
+      return newIndicators;
+    });
   };
 
   useEffect(() => {
-    setIndicators(prevIndicators =>
-      prevIndicators.map(ind => {
-        let newInd = { ...ind };
-        if (ind.id === 'cycle' && ind.cycleStartDate) {
-          const startDate = new Date(ind.cycleStartDate);
-          const today = new Date();
-          const diffTime = Math.abs(today.getTime() - startDate.getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          newInd.value = diffDays;
-        }
-
-        const { status, description } = getIndicatorStatus(newInd);
-        newInd.status = status;
-        newInd.description = description;
-
-        return newInd;
-      })
-    );
-  }, []);
-
-  useEffect(() => {
     const fetchBTCPrice = async () => {
+      setIsLoadingPrice(true);
       try {
         const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
         if (!response.ok) {
-          throw new Error(`Network response was not ok: ${response.statusText}`);
+          throw new Error('Network response was not ok');
         }
         const data = await response.json();
         const btcPrice = data.bitcoin.usd;
-        if (btcPrice) {
-          handleUpdateIndicator('realized_price', { value: btcPrice });
-        }
+        
+        // Use a callback with setIndicators to ensure we are updating based on the latest state
+        setIndicators(prev => {
+           const newIndicators = prev.map(ind => 
+              ind.id === 'realized_price' ? { ...ind, value: btcPrice } : ind
+           );
+           // Recalculate everything after price update
+           const fullyUpdated = newIndicators.map(updateIndicatorStatus);
+           calculateOverallRecommendation(fullyUpdated);
+           return fullyUpdated;
+        });
+
       } catch (error) {
-        // Fail silently. The UI will allow manual entry as a fallback.
+        console.error("Failed to fetch BTC price:", error);
       } finally {
         setIsLoadingPrice(false);
       }
     };
 
-    fetchBTCPrice();
-    const intervalId = setInterval(fetchBTCPrice, 3600000); // Fetch every 1 hour
+    const initializeIndicators = () => {
+        setIndicators(prev => {
+            const updated = prev.map(indicator => {
+                if (indicator.id === 'cycle' && indicator.cycleStartDate) {
+                    const startDate = new Date(indicator.cycleStartDate);
+                    const today = new Date();
+                    const diffTime = Math.abs(today.getTime() - startDate.getTime());
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return { ...indicator, value: diffDays };
+                }
+                return indicator;
+            });
+            const fullyUpdated = updated.map(updateIndicatorStatus);
+            calculateOverallRecommendation(fullyUpdated);
+            return fullyUpdated;
+        });
+    };
 
-    return () => clearInterval(intervalId); // Cleanup interval on component unmount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchBTCPrice();
+    initializeIndicators();
+    // This effect should run once on mount to fetch live data.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-  const getCurrentRecommendation = (currentIndicators: IndicatorData[]): RecommendationResult => {
-    const goodCount = currentIndicators.filter(ind => ind.status === 'good').length;
-    const badCount = currentIndicators.filter(ind => ind.status === 'bad').length;
-
-    let recommendation: 'buy' | 'wait' | 'sell' = 'wait';
-    let text = "대부분의 지표가 매수 또는 매도 구간에 있지 않습니다.\n시장의 방향성이 정해질 때까지 관망하는 것을 추천합니다.";
-    let buyLevel = 0;
-    let sellLevel = 0;
-
-    if (badCount >= 2) {
-        recommendation = 'sell';
-        sellLevel = Math.min(badCount - 1, 4); // 2 indicators -> level 1, capped at 4.
-        text = `${badCount}개의 지표(${badCount}/5)가 매도 고려 구간에 있습니다.\n리스크 관리를 위해 분할 매도를 고려할 수 있는 시점입니다.`;
-    } else if (goodCount >= 2) {
-        recommendation = 'buy';
-        buyLevel = Math.min(goodCount - 1, 4); // 2 indicators -> level 1, capped at 4.
-        text = `${goodCount}개의 지표(${goodCount}/5)가 매수 추천 구간에 진입했습니다.\n분할 매수를 시작하기 좋은 시점으로 판단됩니다.`;
-    }
-
-    return {
-        recommendation,
-        text,
-        buyLevel,
-        sellLevel,
-    };
-  };
-  
-  const { recommendation, text, buyLevel, sellLevel } = getCurrentRecommendation(indicators);
-
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-200 font-sans p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto flex flex-col min-h-screen">
+    <div className="min-h-screen text-slate-200 bg-slate-900 font-sans p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
         <Header />
-        <main className="flex-grow">
-          <div className="mb-8 md:mb-12">
-            <h2 className="text-2xl font-bold text-slate-200 mb-6">종합 판단</h2>
+        <main className="mt-8 space-y-12">
+          <section id="recommendation">
+             <h2 className="text-2xl font-bold text-slate-200 mb-4 text-center">종합판단</h2>
             <RecommendationDisplay
-              currentRecommendation={recommendation}
-              text={text}
-              buyLevel={buyLevel}
-              sellLevel={sellLevel}
+              currentRecommendation={recommendation.current}
+              text={recommendation.text}
+              buyLevel={recommendation.buyLevel}
+              sellLevel={recommendation.sellLevel}
             />
-          </div>
-          <IndicatorGrid 
-            indicators={indicators} 
-            onUpdateIndicator={handleUpdateIndicator}
-            isLoadingPrice={isLoadingPrice}
-          />
+          </section>
+
+          <section id="indicators">
+            <IndicatorGrid indicators={indicators} onUpdateIndicator={updateIndicatorValue} isLoadingPrice={isLoadingPrice} />
+          </section>
         </main>
         <Footer />
       </div>

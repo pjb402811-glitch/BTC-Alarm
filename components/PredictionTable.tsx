@@ -30,25 +30,25 @@ const PredictionTable: React.FC = () => {
                 차트상 주봉기준 매도는 쌍고 확인, 매수는 역배열에서 캔들이 20주선 안착
             </p>
             <div className="overflow-hidden rounded-md border border-slate-700">
-                <table className="w-full text-left text-sm whitespace-nowrap">
+                <table className="w-full text-left text-xs sm:text-sm">
                     <thead className="bg-slate-900/70 text-slate-300">
                         <tr>
-                            <th className="p-3 font-semibold">반감기</th>
-                            <th className="p-3 font-semibold">날짜 (과거/예상)</th>
-                            <th className="p-3 font-semibold">최적 매도 시기 예측 (고점)<br/><small className="font-normal text-slate-400">(반감기 + 약 17~18개월 후)</small></th>
-                            <th className="p-3 font-semibold">최적 매수 시기 예측 (저점)<br/><small className="font-normal text-slate-400">(반감기 + 약 2년 6개월 후)</small></th>
+                            <th className="p-2 sm:p-3 font-semibold">반감기</th>
+                            <th className="p-2 sm:p-3 font-semibold">날짜 (과거/예상)</th>
+                            <th className="p-2 sm:p-3 font-semibold">최적 매도 시기 예측 (고점)<br/><small className="font-normal text-slate-400 block sm:inline">(반감기 + 약 17~18개월 후)</small></th>
+                            <th className="p-2 sm:p-3 font-semibold">최적 매수 시기 예측 (저점)<br/><small className="font-normal text-slate-400 block sm:inline">(반감기 + 약 2년 6개월 후)</small></th>
                         </tr>
                     </thead>
                     <tbody className="text-slate-200">
                         {predictionData.map((row) => (
-                            <tr key={row.halving} className="border-t border-slate-800 even:bg-slate-800/50 hover:bg-slate-700/30">
-                                <td className="p-3 font-semibold">{row.halving}</td>
-                                <td className="p-3">{row.date}</td>
-                                <td className="p-3">
+                            <tr key={row.halving} className={`border-t border-slate-800 even:bg-slate-800/50 hover:bg-slate-700/30 ${row.halving === '4차' ? 'shadow-[inset_0_0_0_3px_theme(colors.red.500)]' : ''}`}>
+                                <td className="p-2 sm:p-3 font-semibold">{row.halving}</td>
+                                <td className="p-2 sm:p-3">{row.date}</td>
+                                <td className="p-2 sm:p-3">
                                     {row.isFuture && <CheckIcon />}
                                     {row.sell}
                                 </td>
-                                <td className="p-3">{row.buy}</td>
+                                <td className="p-2 sm:p-3">{row.buy}</td>
                             </tr>
                         ))}
                     </tbody>
