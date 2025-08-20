@@ -236,7 +236,7 @@ const App: React.FC = () => {
     };
 
     fetchBTCPrice();
-    const intervalId = setInterval(fetchBTCPrice, 60000); // Fetch every 60 seconds
+    const intervalId = setInterval(fetchBTCPrice, 3600000); // Fetch every 1 hour
 
     return () => clearInterval(intervalId); // Cleanup interval on component unmount
   // eslint-disable-next-line react-hooks/exhaustive-deps
