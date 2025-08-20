@@ -48,8 +48,3 @@ export interface IndicatorData {
   nextCycleEstimateDate?: string;
   sourceUrl?: string;
 }
-
-export interface ChatMessage {
-  role: 'user' | 'model';
-  text: string;
-}

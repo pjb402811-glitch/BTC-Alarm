@@ -25,8 +25,9 @@ const PredictionTable: React.FC = () => {
             <h4 className="text-xl font-bold text-slate-100 mb-2">
                 비트코인 최적 매수/매도 시기 종합 예측 (~2050년)
             </h4>
-            <p className="text-sm text-slate-400 mb-4">
-                아래표는 반감기 사이클 예측표 (AI), 차트상 주봉기준 매도는 쌍고 확인, 매수는 역배열에서 캔들이 20주선 안착
+            <p className="text-lg text-slate-400 mb-4">
+                아래표는 반감기 사이클 예측표 (AI),<br />
+                차트상 주봉기준 매도는 쌍고 확인, 매수는 역배열에서 캔들이 20주선 안착
             </p>
             <div className="overflow-hidden rounded-md border border-slate-700">
                 <table className="w-full text-left text-sm whitespace-nowrap">

@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { IndicatorData, RangeVisual, NuplVisual, ComparisonVisual } from '../types';
 
 const InfoIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -8,9 +7,9 @@ const InfoIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-const LinkIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+const ArrowRightIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}>
+      <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
     </svg>
 );
 
@@ -163,15 +162,27 @@ const NuplVisualizer: React.FC<{ visual: NuplVisual; value: number }> = ({ visua
 const ComparisonVisualizer: React.FC<{ 
     indicator: IndicatorData;
     onUpdate: (id: string, values: { value?: number, value2?: number }) => void;
-}> = ({ indicator, onUpdate }) => {
-    const { id, value, value2, visual, unit } = indicator;
+    isLoading?: boolean;
+}> = ({ indicator, onUpdate, isLoading }) => {
+    const { id, value, value2, visual } = indicator;
     const comparisonVisual = visual as ComparisonVisual;
 
     const [isEditing1, setIsEditing1] = useState(false);
     const [editValue1, setEditValue1] = useState(value.toString());
-
     const [isEditing2, setIsEditing2] = useState(false);
     const [editValue2, setEditValue2] = useState(value2?.toString() ?? '');
+
+    useEffect(() => {
+      if (!isEditing1) {
+        setEditValue1(value.toString());
+      }
+    }, [value, isEditing1]);
+
+    useEffect(() => {
+        if (!isEditing2) {
+            setEditValue2(value2?.toString() ?? '');
+        }
+    }, [value2, isEditing2]);
 
     const handleSave1 = () => {
         const newValueNum = parseFloat(editValue1);
@@ -189,7 +200,7 @@ const ComparisonVisualizer: React.FC<{
 
     if (value2 === undefined) return null;
 
-    const isBuyZone = value < value2;
+    const isBuyZone = !isLoading && value < value2;
 
     const formatCurrency = (num: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
 
@@ -200,18 +211,22 @@ const ComparisonVisualizer: React.FC<{
         <div className="flex justify-around items-center text-center mt-4 p-2 rounded-lg bg-slate-900/50">
             <div className={`p-3 rounded-lg transition-all duration-300`}>
                 <p className="text-sm text-slate-400">{comparisonVisual.value1Label}</p>
-                {isEditing1 ? (
-                    <div className="flex items-center gap-1 mt-1">
-                        <input type="number" step="any" value={editValue1} onChange={e => setEditValue1(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSave1()} className={editInputClass} autoFocus />
-                        <button onClick={handleSave1} className={`${iconButtonClass} text-green-400`}><CheckIcon className="w-5 h-5"/></button>
-                        <button onClick={handleCancel1} className={`${iconButtonClass} text-red-400`}><CloseIcon className="w-5 h-5"/></button>
-                    </div>
-                ) : (
-                    <div className="flex items-center gap-1 mt-1">
-                        <p className="text-xl font-bold text-white">{formatCurrency(value)}</p>
-                        <button onClick={() => setIsEditing1(true)} className={`${iconButtonClass} text-slate-400 hover:text-white`}><PencilIcon className="w-4 h-4"/></button>
-                    </div>
-                )}
+                 <div className="flex items-center gap-1 mt-1 min-h-[36px]">
+                    {isLoading ? (
+                        <p className="text-xl font-bold text-white animate-pulse">Loading...</p>
+                    ) : isEditing1 ? (
+                        <div className="flex items-center gap-1">
+                            <input type="number" step="any" value={editValue1} onChange={e => setEditValue1(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSave1()} className={editInputClass} autoFocus />
+                            <button onClick={handleSave1} className={`${iconButtonClass} text-green-400`}><CheckIcon className="w-5 h-5"/></button>
+                            <button onClick={handleCancel1} className={`${iconButtonClass} text-red-400`}><CloseIcon className="w-5 h-5"/></button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1">
+                             <p className="text-xl font-bold text-white">{formatCurrency(value)}</p>
+                             <button onClick={() => setIsEditing1(true)} className={`${iconButtonClass} text-slate-400 hover:text-white`}><PencilIcon className="w-4 h-4"/></button>
+                        </div>
+                    )}
+                </div>
             </div>
             
             <div className={`text-3xl font-bold mx-2 ${isBuyZone ? 'text-green-400' : 'text-slate-500'}`}>{isBuyZone ? '<' : '>'}</div>
@@ -238,9 +253,10 @@ const ComparisonVisualizer: React.FC<{
 interface IndicatorCardProps {
   indicator: IndicatorData;
   onUpdate: (id: string, values: { value?: number, value2?: number }) => void;
+  isLoading?: boolean;
 }
 
-const IndicatorCard: React.FC<IndicatorCardProps> = ({ indicator, onUpdate }) => {
+const IndicatorCard: React.FC<IndicatorCardProps> = ({ indicator, onUpdate, isLoading }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(indicator.value.toString());
@@ -362,7 +378,7 @@ const IndicatorCard: React.FC<IndicatorCardProps> = ({ indicator, onUpdate }) =>
             })()
          )}
         {visual.type === 'nupl' && <NuplVisualizer visual={visual as NuplVisual} value={value} />}
-        {visual.type === 'comparison' && <ComparisonVisualizer indicator={indicator} onUpdate={onUpdate} />}
+        {visual.type === 'comparison' && <ComparisonVisualizer indicator={indicator} onUpdate={onUpdate} isLoading={isLoading} />}
       </div>
       
       {cycleStartDate && nextCycleEstimateDate && (
@@ -390,16 +406,19 @@ const IndicatorCard: React.FC<IndicatorCardProps> = ({ indicator, onUpdate }) =>
         </div>
         <div className="flex items-center gap-2">
             {sourceUrl && (
-                <a
-                  href={sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-slate-400 hover:text-white p-1 rounded-full transition-colors"
-                  aria-label="데이터 소스 보기"
-                  title="데이터 소스 보기"
-                >
-                    <LinkIcon className="w-5 h-5" />
-                </a>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">본 링크를 클릭하여 DATA 반드시확인 입력</span>
+                  <a
+                    href={sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-lg border-b-4 border-slate-900 text-slate-300 hover:bg-slate-600 active:border-b-0 active:translate-y-1 transition-transform duration-150"
+                    aria-label="데이터 소스 보기"
+                    title="데이터 소스 보기"
+                  >
+                      <ArrowRightIcon className="w-5 h-5" />
+                  </a>
+                </div>
             )}
             <button onClick={() => setIsExpanded(!isExpanded)} className="text-slate-400 hover:text-white p-1 rounded-full transition-colors" aria-expanded={isExpanded} aria-label="상세 정보 보기">
                 <InfoIcon className="w-6 h-6"/>
