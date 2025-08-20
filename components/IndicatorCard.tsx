@@ -455,7 +455,7 @@ const IndicatorCard: React.FC<IndicatorCardProps> = ({ indicator, onUpdate, isLo
         <div className="flex items-center gap-2">
             {sourceUrl && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 hidden sm:inline">본 링크를 클릭하여 DATA 반드시확인 입력</span>
+                  <span className="text-xs text-slate-400">링크를 클릭하여 DATA 확인하여 반드시 수정입력</span>
                   <a
                     href={sourceUrl}
                     target="_blank"

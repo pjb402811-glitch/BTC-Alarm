@@ -9,7 +9,7 @@ const Header: React.FC = () => {
       <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
         주요 온체인 지표를 통해 비트코인 현물 투자의 적절한 시점을 분석합니다.
       </p>
-      <p className="text-sm text-slate-500 mt-2">made by PJB</p>
+      <p className="text-sm text-slate-500 mt-1">made by PJB</p>
     </header>
   );
 };
